@@ -61,32 +61,27 @@ const registerUser = async (req, res) => {
 //login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  console.log("🔵 Received login request:", { email, password });
 
   try {
     // Check if the user exists in the database
     const checkUser = await User.findOne({ email });
     if (!checkUser) {
-      console.log("🔴 User not found:", email);
       return res.status(404).json({
         success: false,
         message: "User doesn't exist! Please register first.",
       });
     }
 
-    console.log("🟢 User found:", checkUser);
-
+    // Compare the provided password with the hashed password in the database
     const checkPasswordMatch = await bcrypt.compare(password, checkUser.password);
     if (!checkPasswordMatch) {
-      console.log("🔴 Incorrect password for:", email);
       return res.status(401).json({
         success: false,
         message: "Incorrect password! Please try again.",
       });
     }
 
-    console.log("🟢 Password matched for:", email);
-
+    // Generate JWT token on successful login
     const token = jwt.sign(
       {
         id: checkUser._id,
@@ -98,22 +93,30 @@ const loginUser = async (req, res) => {
       { expiresIn: "60m" }
     );
 
-    console.log("🟢 Token generated:", token);
+    // res.cookie("token", token, { httpOnly: true, secure: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    //   user: {
+    //     email: checkUser.email,
+    //     role: checkUser.role,
+    //     id: checkUser._id,
+    //     userName: checkUser.userName,
+    //   },
+    // });
 
-    res.cookie("token", token, { httpOnly: true, secure: true }).json({
+    res.status(200).json({
       success: true,
-      message: "Logged in successfully",
+      message: 'Logged in successfully',
+      token,
       user: {
         email: checkUser.email,
         role: checkUser.role,
         id: checkUser._id,
         userName: checkUser.userName,
       },
-    });
-
-    console.log("🟢 Response sent successfully");
+    })
   } catch (error) {
-    console.error("🔥 Error in loginUser:", error);
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "An error occurred during the login process. Please try again later.",
@@ -131,8 +134,30 @@ const logoutUser = (_req, res) => {
 };
 
 //auth middleware
+// const authMiddleware = async (req, res, next) => {
+//   const token = req.cookies.token;
+
+//   if (!token)
+//     return res.status(401).json({
+//       success: false,
+//       message: "Unauthorised user!",
+//     });
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.CLIENT_SECRET_KEY);
+//     req.user = decoded;
+//     next();
+//   } catch (error) {
+//     res.status(401).json({
+//       success: false,
+//       message: "Unauthorised user!",
+//     });
+//   }
+// };
+
 const authMiddleware = async (req, res, next) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers['autorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token)
     return res.status(401).json({
