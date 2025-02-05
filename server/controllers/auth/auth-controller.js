@@ -61,27 +61,32 @@ const registerUser = async (req, res) => {
 //login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  console.log("🔵 Received login request:", { email, password });
 
   try {
     // Check if the user exists in the database
     const checkUser = await User.findOne({ email });
     if (!checkUser) {
+      console.log("🔴 User not found:", email);
       return res.status(404).json({
         success: false,
         message: "User doesn't exist! Please register first.",
       });
     }
 
-    // Compare the provided password with the hashed password in the database
+    console.log("🟢 User found:", checkUser);
+
     const checkPasswordMatch = await bcrypt.compare(password, checkUser.password);
     if (!checkPasswordMatch) {
+      console.log("🔴 Incorrect password for:", email);
       return res.status(401).json({
         success: false,
         message: "Incorrect password! Please try again.",
       });
     }
 
-    // Generate JWT token on successful login
+    console.log("🟢 Password matched for:", email);
+
     const token = jwt.sign(
       {
         id: checkUser._id,
@@ -93,6 +98,8 @@ const loginUser = async (req, res) => {
       { expiresIn: "60m" }
     );
 
+    console.log("🟢 Token generated:", token);
+
     res.cookie("token", token, { httpOnly: true, secure: true }).json({
       success: true,
       message: "Logged in successfully",
@@ -103,8 +110,10 @@ const loginUser = async (req, res) => {
         userName: checkUser.userName,
       },
     });
+
+    console.log("🟢 Response sent successfully");
   } catch (error) {
-    console.error(error);
+    console.error("🔥 Error in loginUser:", error);
     res.status(500).json({
       success: false,
       message: "An error occurred during the login process. Please try again later.",

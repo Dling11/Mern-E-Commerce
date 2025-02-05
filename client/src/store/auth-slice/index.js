@@ -30,19 +30,15 @@ export const loginUser = createAsyncThunk(
   "/auth/login",
   async (formData, { rejectWithValue }) => {
     try {
-      console.log("Sending request to:", `${import.meta.env.VITE_API_URL}/api/auth/login`);
-      console.log("Form Data:", formData);
-
+      // Sending login credentials (email & password) to the server
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/auth/login`,
         formData,
         { withCredentials: true }
       );
-
-      console.log("Response Data:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Login Error:", error.response?.data || error);
+      // If there's an error, return a specific error message
       return rejectWithValue(
         error.response?.data || { success: false, message: "Server error" }
       );
